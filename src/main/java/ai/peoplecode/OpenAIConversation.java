@@ -98,6 +98,51 @@ public class OpenAIConversation {
                 e.printStackTrace();
             }
         }
+
+
+        // Modify assistant with modelName that's passed into the constructor
+        try {
+            // URL for the OpenAI Chat Completion endpoint
+            URL url = new URL("https://api.openai.com/v1/assistants/" + assistantId);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+
+            // Setting headers
+            connection.setRequestMethod("POST");
+            connection.setRequestProperty("Content-Type", "application/json");
+            connection.setRequestProperty("Authorization", "Bearer " + apiKey);
+            connection.setRequestProperty("OpenAI-Beta", "assistants=v2");  // Adding the beta HTTP header
+            connection.setDoOutput(true);
+
+            // JSON payload
+            String jsonInputString = "{ \"model\": \"" +
+                    modelName + "\" }";
+
+            // Sending the request
+            try (OutputStream os = connection.getOutputStream()) {
+                byte[] input = jsonInputString.getBytes("utf-8");
+                os.write(input, 0, input.length);
+            }
+
+            // Handling the response
+            int status = connection.getResponseCode();
+            String msg = connection.getResponseMessage();
+            if (status == 200) {
+                try (BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream(), "utf-8"))) {
+                    StringBuilder response = new StringBuilder();
+                    String responseLine;
+                    while ((responseLine = br.readLine()) != null) {
+                        response.append(responseLine.trim());
+                    }
+                }
+            } else {
+                System.out.println("Error: " + status);
+                System.out.println("Msg: " + msg);
+            }
+            connection.disconnect();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
 
     /** askQuestion allows user to ask a question with context (e.g., instructions
@@ -324,7 +369,7 @@ public class OpenAIConversation {
         try {
             ObjectMapper objectMapper = new ObjectMapper();
             JsonNode rootNode = objectMapper.readTree(messagesObject.toString());
-            String assistantReply = rootNode.path("data").get(0).get("content").get(0).path("text").path("value").toString();
+            String assistantReply = rootNode.path("data").get(0).get("content").get(0).path("text").path("value").asText();
 
             // 6) Add assistant reply to langchain4j's chatmemory object as an AiMessage object
             this.chatMemory.add(new AiMessage(assistantReply));
@@ -354,6 +399,10 @@ public class OpenAIConversation {
         instructions = instructions + " Return the questions as a string with delimiter '%%' between each generated question";
 
 
+        //note: for some reason, even with the instructions properly added, once in a while the questionArray consists of only
+        // only one String where the assistant is asking for it to be provided with context to generate questions.
+        // Something may be going weird in the askQuestion api call? The document may not be loaded for the first assistant reply?
+        // Cause for the reply to the second user question it successfully replies with document-related info.
         String[] questionArray =  askQuestion(apiKey, context, instructions, assistantId).split("%%");
         return List.of(questionArray);
     }
@@ -409,51 +458,51 @@ public class OpenAIConversation {
 
         // Base methods demonstration
         // Example conversation
-        OpenAIConversation conversation = new OpenAIConversation(apiKey,modelName);
+//        OpenAIConversation conversation = new OpenAIConversation(apiKey,modelName);
         // Generate sample questions
-        List<String> questions = conversation.generateSampleQuestions("Questions about films in the 1960s", 3, 10);
-        System.out.println("Sample questions: " + questions);
+//        List<String> questions = conversation.generateSampleQuestions("Questions about films in the 1960s", 3, 10);
+//        System.out.println("Sample questions: " + questions);
 
         // Ask a question
-        String response = conversation.askQuestion("You are a film expert", "What are the three best Quentin Tarintino movies?");
-        System.out.println("Response: " + response);
+//        String response = conversation.askQuestion("You are a film expert", "What are the three best Quentin Tarintino movies?");
+//        System.out.println("Response: " + response);
 
         // Ask another question to show continuation-- openAI knows 'he' is Tarantino from memory
-        response = conversation.askQuestion("You are a film expert", "How old is he");
-        System.out.println("Response: " + response);
+//        response = conversation.askQuestion("You are a film expert", "How old is he");
+//        System.out.println("Response: " + response);
 
         // Print conversation history
-        System.out.println("\nConversation History:");
-        System.out.println(conversation);
+//        System.out.println("\nConversation History:");
+//        System.out.println(conversation);
 
 
 
         // Assistant methods demonstration
 //        // Example conversation
-//        OpenAIConversation assistantConversation = new OpenAIConversation(apiKey, modelName, assistantId);
+        OpenAIConversation assistantConversation = new OpenAIConversation(apiKey, modelName, assistantId);
 //        // Generate sample questions
-//        List<String> questions = assistantConversation.generateSampleQuestions(apiKey,"You are an expert in the " +
-//                        "PeopleCodeOpenAI library, a public GitHub repository created GitHub user 'wolberd'.",
-//                assistantId, 3, 50);
-//        System.out.println("Sample questions: " + questions);
+        List<String> questions = assistantConversation.generateSampleQuestions(apiKey,"You are an expert in the " +
+                        "PeopleCodeOpenAI library, a public GitHub repository created GitHub user 'wolberd'.",
+                assistantId, 3, 50);
+        System.out.println("Sample questions: " + questions);
 //
 //        // Ask a question
-//        String response = assistantConversation.askQuestion(apiKey, "You are an expert in the " +
-//                "PeopleCodeOpenAI library, a public GitHub repository created GitHub user 'wolberd'.", "Give me a a " +
-//                        "five-bullet summary of the file you have loaded. If no file is loaded, give me a greeting.",
-//                assistantId);
-//        System.out.println("Response: " + response);
+        String response = assistantConversation.askQuestion(apiKey, "You are an expert in the " +
+                "PeopleCodeOpenAI library, a public GitHub repository created GitHub user 'wolberd'.", "Give me a a " +
+                        "five-bullet summary of the file you have loaded. If no file is loaded, give me a greeting.",
+                assistantId);
+        System.out.println("Response: " + response);
 //
 //        // Ask another question to show continuation-- openAI knows 'he' is Tarantino from memory
-//        response = assistantConversation.askQuestion(apiKey, "You are an expert in the " +
-//                "PeopleCodeOpenAI library, a public GitHub repository created GitHub user 'wolberd'.", "What is the " +
-//                        "title of your file that you have loaded? If no file is loaded, give me a greeting.",
-//                assistantId);
-//        System.out.println("Response: " + response);
+        response = assistantConversation.askQuestion(apiKey, "You are an expert in the " +
+                "PeopleCodeOpenAI library, a public GitHub repository created GitHub user 'wolberd'.", "What is the " +
+                        "title of your file that you have loaded? If no file is loaded, give me a greeting.",
+                assistantId);
+        System.out.println("Response: " + response);
 //
 //        // Print conversation history
-//        System.out.println("\nConversation History:");
-//        System.out.println(assistantConversation);
+        System.out.println("\nConversation History:");
+        System.out.println(assistantConversation);
 
     }
 
