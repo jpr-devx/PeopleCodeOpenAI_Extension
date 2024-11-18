@@ -103,8 +103,8 @@ public class OpenAIConversation {
         // Modify assistant with modelName that's passed into the constructor
         try {
             // URL for the OpenAI Chat Completion endpoint
-            URL url = new URL("https://api.openai.com/v1/assistants/" + assistantId);
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            URI uri = new URI("https://api.openai.com/v1/assistants/" + assistantId);
+            HttpURLConnection connection = (HttpURLConnection) uri.toURL().openConnection();
 
             // Setting headers
             connection.setRequestMethod("POST");
@@ -187,8 +187,8 @@ public class OpenAIConversation {
         // 1) Modify the assistant with the context passed in
         try {
             // URL for the OpenAI Chat Completion endpoint
-            URL url = new URL("https://api.openai.com/v1/assistants/" + assistantId);
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            URI uri = new URI("https://api.openai.com/v1/assistants/" + assistantId);
+            HttpURLConnection connection = (HttpURLConnection) uri.toURL().openConnection();
 
             // Setting headers
             connection.setRequestMethod("POST");
@@ -282,8 +282,8 @@ public class OpenAIConversation {
         // is created in descending order
         try {
             // URL for the OpenAI Chat Completion endpoint
-            URL url = new URL("https://api.openai.com/v1/threads/" + this.threadId + "/runs");
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            URI uri = new URI("https://api.openai.com/v1/threads/" + this.threadId + "/runs");
+            HttpURLConnection connection = (HttpURLConnection) uri.toURL().openConnection();
 
             // Setting headers
             connection.setRequestMethod("POST");
@@ -329,8 +329,8 @@ public class OpenAIConversation {
         // 4) Get the list of Message objects from OpenAI
         try {
             // URL for the OpenAI Chat Completion endpoint
-            URL url = new URL("https://api.openai.com/v1/threads/" + threadId + "/messages");
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            URI uri = new URI("https://api.openai.com/v1/threads/" + threadId + "/messages");
+            HttpURLConnection connection = (HttpURLConnection) uri.toURL().openConnection();
 
             // Setting headers
             connection.setRequestMethod("GET");
