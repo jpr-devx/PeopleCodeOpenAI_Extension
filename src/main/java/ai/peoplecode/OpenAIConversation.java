@@ -396,13 +396,10 @@ public class OpenAIConversation {
                                                 int maxWords){
 
         String instructions = "For the context following, please provide a list of " + count + " questions with a maximum of " + maxWords + " words per question.";
-        instructions = instructions + " Return the questions as a string with delimiter '%%' between each generated question";
+        instructions = instructions + " Return the questions as a string with delimiter '%%' between each generated question. If you have files loaded, please provide " +
+                "sample questions based on those files in addition to the instructions that have been given to you. If you do not have any files loaded, please provide " +
+                "sample questions based on the instructions given to you. Do not provide anything additional to these " + count + "questions.";
 
-
-        //note: for some reason, even with the instructions properly added, once in a while the questionArray consists of only
-        // only one String where the assistant is asking for it to be provided with context to generate questions.
-        // Something may be going weird in the askQuestion api call? The document may not be loaded for the first assistant reply?
-        // Cause for the reply to the second user question it successfully replies with document-related info.
         String[] questionArray =  askQuestion(apiKey, context, instructions, assistantId).split("%%");
         return List.of(questionArray);
     }
@@ -452,55 +449,54 @@ public class OpenAIConversation {
     public static void main(String[] args) {
 
         String apiKey = System.getenv("OPENAI_API_KEY");
-        String modelName = "gpt-4o-mini";
+        String modelName = "gpt-4o";
         String assistantId = System.getenv("ASSISTANT_ID");
 
 
-        // Base methods demonstration
-        // Example conversation
+//        // Base methods demonstration
+//        // Example conversation
 //        OpenAIConversation conversation = new OpenAIConversation(apiKey,modelName);
-        // Generate sample questions
+//        // Generate sample questions
 //        List<String> questions = conversation.generateSampleQuestions("Questions about films in the 1960s", 3, 10);
 //        System.out.println("Sample questions: " + questions);
-
-        // Ask a question
+//
+//        // Ask a question
 //        String response = conversation.askQuestion("You are a film expert", "What are the three best Quentin Tarintino movies?");
 //        System.out.println("Response: " + response);
-
-        // Ask another question to show continuation-- openAI knows 'he' is Tarantino from memory
+//
+//        // Ask another question to show continuation-- openAI knows 'he' is Tarantino from memory
 //        response = conversation.askQuestion("You are a film expert", "How old is he");
 //        System.out.println("Response: " + response);
-
-        // Print conversation history
+//
+//        // Print conversation history
 //        System.out.println("\nConversation History:");
 //        System.out.println(conversation);
 
 
 
         // Assistant methods demonstration
-//        // Example conversation
+        // Example conversation
         OpenAIConversation assistantConversation = new OpenAIConversation(apiKey, modelName, assistantId);
-//        // Generate sample questions
+        // Generate sample questions
         List<String> questions = assistantConversation.generateSampleQuestions(apiKey,"You are an expert in the " +
-                        "PeopleCodeOpenAI library, a public GitHub repository created GitHub user 'wolberd'.",
+                        "PeopleCodeOpenAI library, a public GitHub repository created by GitHub user 'wolberd'.",
                 assistantId, 3, 50);
         System.out.println("Sample questions: " + questions);
-//
-//        // Ask a question
+
+        // Ask a question
         String response = assistantConversation.askQuestion(apiKey, "You are an expert in the " +
-                "PeopleCodeOpenAI library, a public GitHub repository created GitHub user 'wolberd'.", "Give me a a " +
-                        "five-bullet summary of the file you have loaded. If no file is loaded, give me a greeting.",
+                "PeopleCodeOpenAI library, a public GitHub repository created by GitHub user 'wolberd'.", "If you have files loaded, give me a summary of those files. If you have no files loaded, give me a greeting.",
                 assistantId);
         System.out.println("Response: " + response);
-//
-//        // Ask another question to show continuation-- openAI knows 'he' is Tarantino from memory
+
+        // Ask another question to show continuation
         response = assistantConversation.askQuestion(apiKey, "You are an expert in the " +
                 "PeopleCodeOpenAI library, a public GitHub repository created GitHub user 'wolberd'.", "What is the " +
-                        "title of your file that you have loaded? If no file is loaded, give me a greeting.",
+                        "title of your first file that you have loaded? If you have no files loaded, give me a greeting.",
                 assistantId);
         System.out.println("Response: " + response);
-//
-//        // Print conversation history
+
+        // Print conversation history
         System.out.println("\nConversation History:");
         System.out.println(assistantConversation);
 
