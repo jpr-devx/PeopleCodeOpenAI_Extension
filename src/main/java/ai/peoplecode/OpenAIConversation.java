@@ -46,102 +46,7 @@ public class OpenAIConversation {
     public OpenAIConversation( String apiKey, String modelName) {
         this.chatModel = OpenAiChatModel.builder().apiKey(apiKey).modelName(modelName).build();
         this.chatMemory=MessageWindowChatMemory.withMaxMessages(10);
-    }
-
-    /**
-     * OpenAI Constructor allowing for OpenAI's Assistant API to be implementated. File search, code interpretation,
-     * and other functions/tools can be added on OpenAI's UI. This assistant must be created beforehand and it's ID
-     * passed in
-     * @param apiKey OpenAI API key
-     * @param modelName OpenAI model
-     * @param assistantId OpenAI Assistant ID (this can be seen in Dashboard>Assistants)
-     */
-    public OpenAIConversation(String apiKey, String modelName, String assistantId){
-        this.chatMemory=MessageWindowChatMemory.withMaxMessages(10);
-
-        // Adds threadId for messages to take place in (Equivalent to AssistantConversation's setThread)
-        if (this.threadId == null){
-            try {
-                URI uri = new URI("https://api.openai.com/v1/threads");
-                HttpURLConnection connection = (HttpURLConnection) uri.toURL().openConnection();
-
-
-                // Setting request headers
-                connection.setRequestMethod("POST");
-                connection.setRequestProperty("Authorization", "Bearer " + apiKey);
-                connection.setRequestProperty("Content-Type", "application/json");
-                connection.setRequestProperty("OpenAI-Beta", "assistants=v2");  // Adding the beta HTTP header,
-                // required for Assistants beta access
-
-                // Handling the response
-                int status = connection.getResponseCode();
-                String msg = connection.getResponseMessage();
-                if (status == 200) {
-                    try (BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream(), "utf-8"))) {
-                        StringBuilder response = new StringBuilder();
-                        String responseLine;
-                        while ((responseLine = br.readLine()) != null) {
-                            response.append(responseLine.trim());
-                        }
-                        ObjectMapper objectMapper = new ObjectMapper();
-                        JsonNode rootNode = objectMapper.readTree(response.toString());
-                        this.threadId = rootNode.get("id").asText();
-
-                    }
-                } else {
-                    System.out.println("Error: " + status);
-                    System.out.println("Msg: " + msg);
-                }
-                connection.disconnect();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-
-
-        // Modify assistant with modelName that's passed into the constructor
-        try {
-            // URL for the OpenAI Chat Completion endpoint
-            URI uri = new URI("https://api.openai.com/v1/assistants/" + assistantId);
-            HttpURLConnection connection = (HttpURLConnection) uri.toURL().openConnection();
-
-            // Setting headers
-            connection.setRequestMethod("POST");
-            connection.setRequestProperty("Content-Type", "application/json");
-            connection.setRequestProperty("Authorization", "Bearer " + apiKey);
-            connection.setRequestProperty("OpenAI-Beta", "assistants=v2");  // Adding the beta HTTP header
-            connection.setDoOutput(true);
-
-            // JSON payload
-            String jsonInputString = "{ \"model\": \"" +
-                    modelName + "\" }";
-
-            // Sending the request
-            try (OutputStream os = connection.getOutputStream()) {
-                byte[] input = jsonInputString.getBytes("utf-8");
-                os.write(input, 0, input.length);
-            }
-
-            // Handling the response
-            int status = connection.getResponseCode();
-            String msg = connection.getResponseMessage();
-            if (status == 200) {
-                try (BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream(), "utf-8"))) {
-                    StringBuilder response = new StringBuilder();
-                    String responseLine;
-                    while ((responseLine = br.readLine()) != null) {
-                        response.append(responseLine.trim());
-                    }
-                }
-            } else {
-                System.out.println("Error: " + status);
-                System.out.println("Msg: " + msg);
-            }
-            connection.disconnect();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
+        this.threadId = null;
     }
 
     /** askQuestion allows user to ask a question with context (e.g., instructions
@@ -182,6 +87,51 @@ public class OpenAIConversation {
         //          4) Get the list of messages in the thread after the run has been completed
         //          5) Return the most recent message in that list, the assistant's message
         //          6) Add assistant's reply to langchain4j's ChatMemory object
+
+
+
+        // NEW STEP: Check to see if the threadId is null, if it is, create a new thread
+        // Adds threadId for messages to take place in (Equivalent to AssistantConversation's setThread)
+        if (this.threadId == null){
+            //todo: I need to initialize the thread with any messages from the chatmemory data member in order to
+            // keep both in parallel
+            try {
+                URI uri = new URI("https://api.openai.com/v1/threads");
+                HttpURLConnection connection = (HttpURLConnection) uri.toURL().openConnection();
+
+
+                // Setting request headers
+                connection.setRequestMethod("POST");
+                connection.setRequestProperty("Authorization", "Bearer " + apiKey);
+                connection.setRequestProperty("Content-Type", "application/json");
+                connection.setRequestProperty("OpenAI-Beta", "assistants=v2");  // Adding the beta HTTP header,
+                // required for Assistants beta access
+
+                // Handling the response
+                int status = connection.getResponseCode();
+                String msg = connection.getResponseMessage();
+                if (status == 200) {
+                    try (BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream(), "utf-8"))) {
+                        StringBuilder response = new StringBuilder();
+                        String responseLine;
+                        while ((responseLine = br.readLine()) != null) {
+                            response.append(responseLine.trim());
+                        }
+                        ObjectMapper objectMapper = new ObjectMapper();
+                        JsonNode rootNode = objectMapper.readTree(response.toString());
+                        this.threadId = rootNode.get("id").asText();
+
+                    }
+                } else {
+                    System.out.println("Error: " + status);
+                    System.out.println("Msg: " + msg);
+                }
+                connection.disconnect();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
 
         // 1) Modify the assistant with the context passed in
         try {
@@ -448,7 +398,7 @@ public class OpenAIConversation {
     public static void main(String[] args) {
 
         String apiKey = System.getenv("OPENAI_API_KEY");
-        String modelName = "gpt-4o";
+        String modelName = "gpt-4o-mini";
         String assistantId = System.getenv("ASSISTANT_ID");
 
 
@@ -470,12 +420,26 @@ public class OpenAIConversation {
 //        // Print conversation history
 //        System.out.println("\nConversation History:");
 //        System.out.println(conversation);
+//
+//        questions = conversation.generateSampleQuestions(apiKey,"You are an expert in the " +
+//                        "PeopleCodeOpenAI library, a public GitHub repository created by GitHub user 'wolberd'.",
+//                assistantId, 3, 50);
+//        System.out.println("Sample questions: " + questions);
 
+
+        // note: Langchain4J is being difficult. They have .text() deprecated so accessing the value of the message
+        //  is way harder than it should be. Will need to look in to using AiMessage, UserMessage, etc. accessors
+        //  instead. For now, only UserMessage.text() is deprecated for some reason. AiMessage and SystemMessage both
+        //  have their text() methods without a @Deprecated tag
+//        for (int i = 0; i < conversation.chatMemory.messages().size(); i++){
+//            ChatMessage message = conversation.chatMemory.messages().get(i);
+//            System.out.println("Type: " + message.type() + "\tText: " + message.text());
+//        }
 
 
         // Assistant methods demonstration
         // Example conversation
-        OpenAIConversation assistantConversation = new OpenAIConversation(apiKey, modelName, assistantId);
+        OpenAIConversation assistantConversation = new OpenAIConversation(apiKey, modelName);
         // Generate sample questions
         List<String> questions = assistantConversation.generateSampleQuestions(apiKey,"You are an expert in the " +
                         "PeopleCodeOpenAI library, a public GitHub repository created by GitHub user 'wolberd'.",
@@ -483,21 +447,21 @@ public class OpenAIConversation {
         System.out.println("Sample questions: " + questions);
 
         // Ask a question
-        String response = assistantConversation.askQuestion(apiKey, "You are an expert in the " +
-                "PeopleCodeOpenAI library, a public GitHub repository created by GitHub user 'wolberd'.", "If you have files loaded, give me a summary of those files. If you have no files loaded, give me a greeting.",
-                assistantId);
-        System.out.println("Response: " + response);
+//        String response = assistantConversation.askQuestion(apiKey, "You are an expert your document set", "If you " +
+//                        "have files loaded, give me a summary of those files. If you have no files loaded, give me a greeting.",
+//                assistantId);
+//        System.out.println("Response: " + response);
 
         // Ask another question to show continuation
-        response = assistantConversation.askQuestion(apiKey, "You are an expert in the " +
-                "PeopleCodeOpenAI library, a public GitHub repository created GitHub user 'wolberd'.", "What is the " +
-                        "title of your first file that you have loaded? If you have no files loaded, give me a greeting.",
-                assistantId);
-        System.out.println("Response: " + response);
+//        response = assistantConversation.askQuestion(apiKey, "You are an expert in the " +
+//                "PeopleCodeOpenAI library, a public GitHub repository created GitHub user 'wolberd'.", "What is the " +
+//                        "title of your first file that you have loaded? If you have no files loaded, give me a greeting.",
+//                assistantId);
+//        System.out.println("Response: " + response);
 
         // Print conversation history
-        System.out.println("\nConversation History:");
-        System.out.println(assistantConversation);
+//        System.out.println("\nConversation History:");
+//        System.out.println(assistantConversation);
 
     }
 
