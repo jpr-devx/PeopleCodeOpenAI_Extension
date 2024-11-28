@@ -404,14 +404,15 @@ public class OpenAIConversation {
 
 //        // Base methods demonstration
 //        // Example conversation
-//        OpenAIConversation conversation = new OpenAIConversation(apiKey,modelName);
+        OpenAIConversation conversation = new OpenAIConversation(apiKey,modelName);
 //        // Generate sample questions
-//        List<String> questions = conversation.generateSampleQuestions("Questions about films in the 1960s", 3, 10);
+//        List<String> questions = conversation.generateSampleQuestions("OpenAI and langchain4j", 3, 10);
 //        System.out.println("Sample questions: " + questions);
 //
 //        // Ask a question
-//        String response = conversation.askQuestion("You are a film expert", "What are the three best Quentin Tarintino movies?");
-//        System.out.println("Response: " + response);
+        String response = conversation.askQuestion("You are a coding expert", "How does OpenAI integrate with " +
+                "Langchain4J?");
+        System.out.println("Response: " + response);
 //
 //        // Ask another question to show continuation-- openAI knows 'he' is Tarantino from memory
 //        response = conversation.askQuestion("You are a film expert", "How old is he");
@@ -427,41 +428,32 @@ public class OpenAIConversation {
 //        System.out.println("Sample questions: " + questions);
 
 
-        // note: Langchain4J is being difficult. They have .text() deprecated so accessing the value of the message
-        //  is way harder than it should be. Will need to look in to using AiMessage, UserMessage, etc. accessors
-        //  instead. For now, only UserMessage.text() is deprecated for some reason. AiMessage and SystemMessage both
-        //  have their text() methods without a @Deprecated tag
-//        for (int i = 0; i < conversation.chatMemory.messages().size(); i++){
-//            ChatMessage message = conversation.chatMemory.messages().get(i);
-//            System.out.println("Type: " + message.type() + "\tText: " + message.text());
-//        }
-
 
         // Assistant methods demonstration
         // Example conversation
-        OpenAIConversation assistantConversation = new OpenAIConversation(apiKey, modelName);
+
         // Generate sample questions
-        List<String> questions = assistantConversation.generateSampleQuestions(apiKey,"You are an expert in the " +
+        List<String> questions = conversation.generateSampleQuestions(apiKey,"You are an expert in the " +
                         "PeopleCodeOpenAI library, a public GitHub repository created by GitHub user 'wolberd'.",
                 assistantId, 3, 50);
         System.out.println("Sample questions: " + questions);
 
         // Ask a question
-//        String response = assistantConversation.askQuestion(apiKey, "You are an expert your document set", "If you " +
+//        String response = conversation.askQuestion(apiKey, "You are an expert your document set", "If you " +
 //                        "have files loaded, give me a summary of those files. If you have no files loaded, give me a greeting.",
 //                assistantId);
 //        System.out.println("Response: " + response);
 
         // Ask another question to show continuation
-//        response = assistantConversation.askQuestion(apiKey, "You are an expert in the " +
+//        response = conversation.askQuestion(apiKey, "You are an expert in the " +
 //                "PeopleCodeOpenAI library, a public GitHub repository created GitHub user 'wolberd'.", "What is the " +
 //                        "title of your first file that you have loaded? If you have no files loaded, give me a greeting.",
 //                assistantId);
 //        System.out.println("Response: " + response);
 
         // Print conversation history
-//        System.out.println("\nConversation History:");
-//        System.out.println(assistantConversation);
+        System.out.println("\nConversation History:");
+        System.out.println(conversation);
 
     }
 
